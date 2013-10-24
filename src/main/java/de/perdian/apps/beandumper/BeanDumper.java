@@ -105,7 +105,9 @@ public class BeanDumper {
         } else {
             context.pushObject(bean);
             try {
-                this.dumpBeanValue(bean, context);
+                if(context.hasPrefix()) {
+                  this.dumpBeanValue(bean, context);
+                }
                 for(PropertyDescriptor propertyDescriptor : propertyDescriptors) {
                     context.pushPrefix((context.hasPrefix() ? "." : "") + propertyDescriptor.getName());
                     try {
@@ -188,19 +190,26 @@ public class BeanDumper {
 
     private void dumpMap(Map<?, ?> map, BeanDumperContext context) throws IOException {
 
-        StringBuilder infoContent = new StringBuilder();
-        infoContent.append("[Map, size=").append(map.size());
-        infoContent.append(", class=").append(map.getClass().getName());
-        infoContent.append("]");
-
-        this.getTarget().append(context.formatPrefix(BeanDumperFormat.VIRTUAL));
-        this.getTarget().append(context.formatValue(infoContent, BeanDumperFormat.VIRTUAL));
-        this.getTarget().append("\n");
+        if(context.hasPrefix()) {
+            StringBuilder infoContent = new StringBuilder();
+            infoContent.append("[Map, size=").append(map.size());
+            infoContent.append(", class=").append(map.getClass().getName());
+            infoContent.append("]");
+            this.getTarget().append(context.formatPrefix(BeanDumperFormat.VIRTUAL));
+            this.getTarget().append(context.formatValue(infoContent, BeanDumperFormat.VIRTUAL));
+            this.getTarget().append("\n");
+        }
 
         context.pushObject(map);
         try {
-            for(Map.Entry<?, ?> mapEntry : map.entrySet()) {
-                this.dumpMapEntry(mapEntry.getKey(), mapEntry.getValue(), context);
+            List<Object> keyList = new ArrayList<Object>(map.keySet());
+            Collections.sort(keyList, new Comparator<Object>() {
+                @Override public int compare(Object o1, Object o2) {
+                    return String.valueOf(o1).compareTo(String.valueOf(o2));
+                }
+            });
+            for(Object key : keyList) {
+                this.dumpMapEntry(key, map.get(key), context);
             }
         } finally {
             context.popObject();
@@ -212,15 +221,21 @@ public class BeanDumper {
         BeanDumperFormat[] formats = mapEntryKey instanceof String ? null : new BeanDumperFormat[] { BeanDumperFormat.VIRTUAL };
         context.pushFormats(formats);
         try {
-            StringBuilder prefixBuilder = new StringBuilder("[");
-            if(mapEntryKey == null) {
-                prefixBuilder.append("null");
-            } else if(mapEntryKey instanceof String) {
-                prefixBuilder.append("'").append(mapEntryKey).append("'");
+            StringBuilder prefixBuilder = new StringBuilder();
+            if(context.hasPrefix()) {
+                prefixBuilder.append("[");
+                if(mapEntryKey == null) {
+                    prefixBuilder.append("null");
+                } else if(mapEntryKey instanceof String) {
+                    prefixBuilder.append("'").append(mapEntryKey).append("'");
+                } else {
+                    prefixBuilder.append(mapEntryKey);
+                }
+                prefixBuilder.append("]");
             } else {
                 prefixBuilder.append(mapEntryKey);
             }
-            context.pushPrefix(prefixBuilder.append("]").toString());
+            context.pushPrefix(prefixBuilder.toString());
             try {
                 this.dumpObject(mapEntryValue, context);
             } finally {

@@ -16,15 +16,29 @@
  */
 package de.perdian.apps.beandumper;
 
-import de.perdian.apps.beandumper.beans.BeanA;
-import de.perdian.apps.beandumper.impl.HtmlFormatHandler;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import de.perdian.apps.beandumper.beans.BeanB;
+import de.perdian.apps.beandumper.beans.BeanC;
 
 public class BeanDumperSuite {
 
     public static void main(String[] args) throws Exception {
 
-        System.err.println(new BeanDumper(new HtmlFormatHandler()).dump(new BeanA()));
+//        System.err.println(new BeanDumper(new HtmlFormatHandler()).dump(new BeanA()));
 //        System.err.println(new BeanDumper().dump(new BeanA()));
+
+        Map<Object, Object> cMap = new LinkedHashMap<Object, Object>();
+        cMap.put("ax", "cc");
+        cMap.put(Thread.currentThread(), new BeanC());
+
+        Map<Object, Object> map = new HashMap<Object, Object>();
+        map.put("a", "aValue");
+        map.put("b", new BeanB());
+        map.put("c", cMap);
+        System.err.println(new BeanDumper().dump(map));
 
     }
 

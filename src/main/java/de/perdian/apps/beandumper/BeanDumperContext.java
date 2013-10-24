@@ -40,10 +40,12 @@ class BeanDumperContext {
     }
 
     BeanDumperContext pushPrefix(String text) {
-        String oldPrefix = this.getPrefixStack().isEmpty() ? "" : this.getPrefixStack().get(0);
-        String newPrefix = oldPrefix + text;
-        this.getPrefixStack().add(0, newPrefix);
-        this.setCurrentPrefix(newPrefix);
+        if(text != null) {
+            String oldPrefix = this.getPrefixStack().isEmpty() ? "" : this.getPrefixStack().get(0);
+            String newPrefix = oldPrefix + text;
+            this.getPrefixStack().add(0, newPrefix);
+            this.setCurrentPrefix(newPrefix);
+        }
         return this;
     }
 
