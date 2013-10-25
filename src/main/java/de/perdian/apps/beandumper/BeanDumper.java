@@ -94,7 +94,11 @@ public class BeanDumper {
         if(!this.checkDirectValue(bean)) {
             this.getTarget().append(context.formatValue("[" + bean.getClass().getName() + "] ", BeanDumperFormat.INFO));
         }
-        this.getTarget().append(context.formatValue(bean.toString()));
+        try {
+            this.getTarget().append(context.formatValue(bean.toString()));
+        } catch(Exception e) {
+            this.getTarget().append(context.formatValue("[Cannot invoke toString] " + e, BeanDumperFormat.ERROR));
+        }
         this.getTarget().append("\n");
     }
 
