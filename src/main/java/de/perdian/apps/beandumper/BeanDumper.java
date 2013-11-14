@@ -319,6 +319,8 @@ public class BeanDumper {
             return false;
         } else if(Object.class.equals(readMethod.getDeclaringClass())) {
             return false;
+        } else if(Enum.class.equals(readMethod.getDeclaringClass())) {
+            return false;
         } else {
             return true;
         }
