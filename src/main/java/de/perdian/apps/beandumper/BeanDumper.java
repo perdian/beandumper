@@ -4,6 +4,7 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -95,11 +96,19 @@ public class BeanDumper {
             this.getTarget().append(context.formatValue("[" + bean.getClass().getName() + "] ", BeanDumperFormat.INFO));
         }
         try {
-            this.getTarget().append(context.formatValue(bean.toString()));
+            this.getTarget().append(context.formatValue(this.formatBeanAsString(bean)));
         } catch(Exception e) {
             this.getTarget().append(context.formatValue("[Cannot invoke toString] " + e, BeanDumperFormat.ERROR));
         }
         this.getTarget().append("\n");
+    }
+
+    private String formatBeanAsString(Object bean) {
+        if(bean instanceof File) {
+            return ((File)bean).getAbsolutePath();
+        } else {
+            return bean.toString();
+        }
     }
 
     private void dumpBeanGraph(Object bean, BeanDumperContext context) throws IOException {
@@ -330,6 +339,7 @@ public class BeanDumper {
         return (bean instanceof String)
             || (bean instanceof Number)
             || (bean instanceof Thread)
+            || (bean instanceof File)
         ;
     }
 
