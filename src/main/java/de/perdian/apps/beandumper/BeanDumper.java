@@ -221,7 +221,7 @@ public class BeanDumper {
                     String s1 = String.valueOf(o1);
                     String s2 = String.valueOf(o2);
                     boolean valid1 = BeanDumper.this.checkValidKeyString(s1);
-                    boolean valid2 = BeanDumper.this.checkValidKeyString(s1);
+                    boolean valid2 = BeanDumper.this.checkValidKeyString(s2);
                     if(valid1 && !valid2) {
                         return -1;
                     } else if(!valid1 && valid2) {

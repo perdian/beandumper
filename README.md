@@ -28,7 +28,7 @@ the dependency to the pom.xml of your project:
           <dependency>
               <groupId>de.perdian.apps.beandumper</groupId>
               <artifactId>beandumper</artifactId>
-              <version>1.0.3</version>
+              <version>1.0.4</version>
           </dependency>
           ...
       </project>
