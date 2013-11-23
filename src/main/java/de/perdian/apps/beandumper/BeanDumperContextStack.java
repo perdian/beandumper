@@ -36,9 +36,11 @@ class BeanDumperContextStack {
     }
 
     Entry lookupEntry(Object object) {
-        for(BeanDumperContextStack.Entry entry : this.getEntries()) {
-            if(entry.getObject() == object) {
-              return entry;
+        if(object != null) {
+            for(BeanDumperContextStack.Entry entry : this.getEntries()) {
+                if(object == entry.getObject() || object.equals(entry.getObject())) {
+                  return entry;
+                }
             }
         }
         return null;
