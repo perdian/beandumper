@@ -372,6 +372,7 @@ public class BeanDumper {
 
     private boolean checkSimpleBeanClassName(String className) {
         return className.startsWith("org.springframework.beans")
+            || className.startsWith("org.springframework.format")
             || className.startsWith("org.springframework.web.context")
             || className.startsWith("org.apache.tiles")
         ;
@@ -392,7 +393,7 @@ public class BeanDumper {
     // ---  Property access methods  -------------------------------------------
     // -------------------------------------------------------------------------
 
-    private Appendable getTarget() {
+    public Appendable getTarget() {
         return this.myTarget;
     }
     private void setTarget(Appendable target) {
