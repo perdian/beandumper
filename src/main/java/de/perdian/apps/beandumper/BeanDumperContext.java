@@ -133,6 +133,13 @@ class BeanDumperContext {
     // ---  Property access methods  -------------------------------------------
     // -------------------------------------------------------------------------
 
+    public String getCurrentPrefix() {
+        return this.myCurrentPrefix;
+    }
+    private void setCurrentPrefix(String currentPrefix) {
+        this.myCurrentPrefix = currentPrefix;
+    }
+
     private BeanDumperFormatHandler getFormatHandler() {
         return this.myFormatHandler;
     }
@@ -152,13 +159,6 @@ class BeanDumperContext {
     }
     private void setPrefixStack(List<String> prefixStack) {
         this.myPrefixStack = prefixStack;
-    }
-
-    private String getCurrentPrefix() {
-        return this.myCurrentPrefix;
-    }
-    private void setCurrentPrefix(String currentPrefix) {
-        this.myCurrentPrefix = currentPrefix;
     }
 
     private List<BeanDumperFormat[]> getFormatStack() {

@@ -71,7 +71,7 @@ public class BeanDumper {
     }
 
     private void dumpObject(Object object, BeanDumperContext context) throws IOException {
-        if(this.checkIgnoreObject(object)) {
+        if(this.checkIgnoreObject(object, context)) {
             return; // Ignore
         } else if(object == null) {
             this.getTarget().append(context.formatPrefix());
@@ -112,50 +112,50 @@ public class BeanDumper {
     }
 
     private void dumpBeanGraph(Object bean, BeanDumperContext context) throws IOException {
-        List<PropertyDescriptor> propertyDescriptors = this.checkSimpleBean(bean) ? null : this.createPropertyDescriptors(bean);
-        if(propertyDescriptors == null || propertyDescriptors.isEmpty()) {
-            this.dumpBeanValue(bean, context);
+        BeanDumperContextStack.Entry stackEntry = context.lookupObjectEntry(bean);
+        if(stackEntry != null) {
+
+            StringBuilder valueBuilder  = new StringBuilder();
+            valueBuilder.append("[Recursion of ");
+            valueBuilder.append(bean.getClass().getName());
+            valueBuilder.append(" starting at '").append(stackEntry.getPrefix());
+            valueBuilder.append("']");
+
+            this.getTarget().append(context.formatPrefix());
+            this.getTarget().append(context.formatValue(valueBuilder, BeanDumperFormat.VIRTUAL));
+            this.getTarget().append("\n");
+
         } else {
-            context.pushObject(bean);
-            try {
-                if(context.hasPrefix()) {
-                  this.dumpBeanValue(bean, context);
-                }
-                for(PropertyDescriptor propertyDescriptor : propertyDescriptors) {
-                    context.pushPrefix((context.hasPrefix() ? "." : "") + propertyDescriptor.getName());
-                    try {
-                        propertyDescriptor.getReadMethod().setAccessible(true);
-                        Object propertyValue = propertyDescriptor.getReadMethod().invoke(bean);
-                        BeanDumperContextStack.Entry stackEntry = context.lookupObjectEntry(propertyValue);
-                        if(stackEntry != null) {
-
-                            StringBuilder valueBuilder  = new StringBuilder();
-                            valueBuilder.append("[Recursion of ");
-                            valueBuilder.append(propertyValue.getClass().getName());
-                            valueBuilder.append(" starting at '").append(stackEntry.getPrefix());
-                            valueBuilder.append("']");
-
-                            this.getTarget().append(context.formatPrefix());
-                            this.getTarget().append(context.formatValue(valueBuilder, BeanDumperFormat.VIRTUAL));
-                            this.getTarget().append("\n");
-
-                        } else {
-                          this.dumpObject(propertyValue, context);
-                        }
-                    } catch(Throwable e) {
-                        Throwable displayException = e;
-                        if(e instanceof InvocationTargetException) {
-                            displayException = e.getCause();
-                        }
-                        this.getTarget().append(context.formatPrefix(BeanDumperFormat.ERROR));
-                        this.getTarget().append(context.formatValue("[Cannot retrieve value] " + displayException, BeanDumperFormat.ERROR));
-                        this.getTarget().append("\n");
-                    } finally {
-                        context.popPrefix();
+            List<PropertyDescriptor> propertyDescriptors = this.checkSimpleBean(bean) ? null : this.createPropertyDescriptors(bean);
+            if(propertyDescriptors == null || propertyDescriptors.isEmpty()) {
+                this.dumpBeanValue(bean, context);
+            } else {
+                context.pushObject(bean);
+                try {
+                    if(context.hasPrefix()) {
+                      this.dumpBeanValue(bean, context);
                     }
+                    for(PropertyDescriptor propertyDescriptor : propertyDescriptors) {
+                        context.pushPrefix((context.hasPrefix() ? "." : "") + propertyDescriptor.getName());
+                        try {
+                            propertyDescriptor.getReadMethod().setAccessible(true);
+                            Object propertyValue = propertyDescriptor.getReadMethod().invoke(bean);
+                            this.dumpObject(propertyValue, context);
+                        } catch(Throwable e) {
+                            Throwable displayException = e;
+                            if(e instanceof InvocationTargetException) {
+                                displayException = e.getCause();
+                            }
+                            this.getTarget().append(context.formatPrefix(BeanDumperFormat.ERROR));
+                            this.getTarget().append(context.formatValue("[Cannot retrieve value] " + displayException, BeanDumperFormat.ERROR));
+                            this.getTarget().append("\n");
+                        } finally {
+                            context.popPrefix();
+                        }
+                    }
+                } finally {
+                    context.popObject();
                 }
-            } finally {
-                context.popObject();
             }
         }
     }
@@ -218,7 +218,17 @@ public class BeanDumper {
             List<Object> keyList = new ArrayList<Object>(map.keySet());
             Collections.sort(keyList, new Comparator<Object>() {
                 @Override public int compare(Object o1, Object o2) {
-                    return String.valueOf(o1).compareTo(String.valueOf(o2));
+                    String s1 = String.valueOf(o1);
+                    String s2 = String.valueOf(o2);
+                    boolean valid1 = BeanDumper.this.checkValidKeyString(s1);
+                    boolean valid2 = BeanDumper.this.checkValidKeyString(s2);
+                    if(valid1 && !valid2) {
+                        return -1;
+                    } else if(!valid1 && valid2) {
+                        return 1;
+                    } else {
+                        return s1.compareTo(s2);
+                    }
                 }
             });
             for(Object key : keyList) {
@@ -231,23 +241,27 @@ public class BeanDumper {
     }
 
     private void dumpMapEntry(Object mapEntryKey, Object mapEntryValue, BeanDumperContext context) throws IOException {
-        BeanDumperFormat[] formats = mapEntryKey instanceof String ? null : new BeanDumperFormat[] { BeanDumperFormat.VIRTUAL };
+
+        String mapEntryKeyString = String.valueOf(mapEntryKey);
+        StringBuilder prefixBuilder = new StringBuilder();
+        boolean validKeyString = this.checkValidKeyString(mapEntryKeyString);
+        if(context.hasPrefix() || !validKeyString) {
+            prefixBuilder.append("[");
+            if(mapEntryKey == null) {
+                prefixBuilder.append("null");
+            } else if(mapEntryKey instanceof String) {
+                prefixBuilder.append("'").append(mapEntryKeyString).append("'");
+            } else {
+                prefixBuilder.append(mapEntryKeyString);
+            }
+            prefixBuilder.append("]");
+        } else {
+            prefixBuilder.append(mapEntryKeyString);
+        }
+
+        BeanDumperFormat[] formats = mapEntryKey instanceof String && validKeyString ? null : new BeanDumperFormat[] { BeanDumperFormat.VIRTUAL };
         context.pushFormats(formats);
         try {
-            StringBuilder prefixBuilder = new StringBuilder();
-            if(context.hasPrefix()) {
-                prefixBuilder.append("[");
-                if(mapEntryKey == null) {
-                    prefixBuilder.append("null");
-                } else if(mapEntryKey instanceof String) {
-                    prefixBuilder.append("'").append(mapEntryKey).append("'");
-                } else {
-                    prefixBuilder.append(mapEntryKey);
-                }
-                prefixBuilder.append("]");
-            } else {
-                prefixBuilder.append(mapEntryKey);
-            }
             context.pushPrefix(prefixBuilder.toString());
             try {
                 this.dumpObject(mapEntryValue, context);
@@ -256,6 +270,14 @@ public class BeanDumper {
             }
         } finally {
             context.popFormats();
+        }
+    }
+
+    boolean checkValidKeyString(String value) {
+        if(value == null) {
+            return true;
+        } else {
+            return value.indexOf(".") < 0;
         }
     }
 
@@ -336,10 +358,23 @@ public class BeanDumper {
     }
 
     private boolean checkSimpleBean(Object bean) {
-        return (bean instanceof String)
-            || (bean instanceof Number)
-            || (bean instanceof Thread)
-            || (bean instanceof File)
+        return (bean instanceof java.lang.String)
+            || (bean instanceof java.lang.Class<?>)
+            || (bean instanceof java.lang.ClassLoader)
+            || (bean instanceof java.lang.Number)
+            || (bean instanceof java.lang.Thread)
+            || (bean instanceof java.io.File)
+            || (bean instanceof java.util.Date)
+            || (bean instanceof java.util.Locale)
+            || this.checkSimpleBeanClassName(bean.getClass().getName())
+        ;
+    }
+
+    private boolean checkSimpleBeanClassName(String className) {
+        return className.startsWith("org.springframework.beans")
+            || className.startsWith("org.springframework.format")
+            || className.startsWith("org.springframework.web.context")
+            || className.startsWith("org.apache.tiles")
         ;
     }
 
@@ -349,7 +384,7 @@ public class BeanDumper {
         ;
     }
 
-    private boolean checkIgnoreObject(Object bean) {
+    private boolean checkIgnoreObject(Object bean, BeanDumperContext context) {
         return false;
     }
 
@@ -358,7 +393,7 @@ public class BeanDumper {
     // ---  Property access methods  -------------------------------------------
     // -------------------------------------------------------------------------
 
-    private Appendable getTarget() {
+    public Appendable getTarget() {
         return this.myTarget;
     }
     private void setTarget(Appendable target) {
