@@ -75,7 +75,7 @@ public class BeanDumper {
             return; // Ignore
         } else if(object == null) {
             this.getTarget().append(context.formatPrefix());
-            this.getTarget().append(context.formatValue("<null>"));
+            this.getTarget().append(context.formatValue("<null>", BeanDumperFormat.INFO));
             this.getTarget().append("\n");
         } else if(object instanceof Collection) {
             this.dumpCollection((Collection<?>)object, context);
