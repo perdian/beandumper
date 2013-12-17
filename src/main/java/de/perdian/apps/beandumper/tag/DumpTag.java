@@ -17,12 +17,16 @@
 package de.perdian.apps.beandumper.tag;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
+import javax.servlet.jsp.tagext.Tag;
 import javax.servlet.jsp.tagext.TagSupport;
 
 import de.perdian.apps.beandumper.BeanDumper;
@@ -34,6 +38,13 @@ public class DumpTag extends TagSupport {
 
     private Object myRoot = null;
     private String myPrefix = null;
+    private List<Pattern> myIgnorePatterns = null;
+
+    @Override
+    public int doStartTag() throws JspException {
+        this.setPatterns(new ArrayList<Pattern>());
+        return Tag.EVAL_BODY_INCLUDE;
+    }
 
     @Override
     public int doEndTag() throws JspException {
@@ -43,12 +54,21 @@ public class DumpTag extends TagSupport {
 
             JspWriter jspWriter = this.pageContext.getOut();
             BeanDumper beanDumper = new BeanDumper(jspWriter);
+            beanDumper.setIgnorePatterns(this.getIgnorePatterns());
             beanDumper.setFormatHandler(new HtmlFormatHandler());
             beanDumper.dump(rootObject, this.getPrefix());
             return super.doEndTag();
 
         } catch(IOException e) {
             throw new JspException("Cannot dump content", e);
+        }
+    }
+
+    void addIgnorePattern(String pattern) throws JspException {
+        try {
+            this.getIgnorePatterns().add(Pattern.compile(pattern));
+        } catch(Exception e) {
+            throw new JspException("Invalid regex pattern: " + pattern, e);
         }
     }
 
@@ -86,6 +106,13 @@ public class DumpTag extends TagSupport {
     }
     public void setPrefix(String prefix) {
         this.myPrefix = prefix;
+    }
+
+    List<Pattern> getIgnorePatterns() {
+        return this.myIgnorePatterns;
+    }
+    void setPatterns(List<Pattern> ignorePatterns) {
+        this.myIgnorePatterns = ignorePatterns;
     }
 
 }

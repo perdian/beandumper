@@ -14,13 +14,23 @@
   <tag>
     <name>dump</name>
     <tag-class>de.perdian.apps.beandumper.tag.DumpTag</tag-class>
-    <body-content>empty</body-content>
+    <body-content>JSP</body-content>
     <attribute>
       <name>root</name>
       <rtexprvalue>true</rtexprvalue>
     </attribute>
     <attribute>
       <name>prefix</name>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+  </tag>
+
+  <tag>
+    <name>ignore</name>
+    <tag-class>de.perdian.apps.beandumper.tag.DumpIgnoreTag</tag-class>
+    <body-content>empty</body-content>
+    <attribute>
+      <name>pattern</name>
       <rtexprvalue>true</rtexprvalue>
     </attribute>
   </tag>
