@@ -377,6 +377,7 @@ public class BeanDumper {
             || className.startsWith("org.springframework.core")
             || className.startsWith("org.springframework.format")
             || className.startsWith("org.springframework.web.context")
+            || className.startsWith("org.springframework.aop")
             || className.startsWith("org.apache.tiles")
         ;
     }
